@@ -20,3 +20,4 @@ docs/superpowers/
 .vscode/
 # bench copies of older builds for comparisons
 bench/*.prev.js
+.idea
