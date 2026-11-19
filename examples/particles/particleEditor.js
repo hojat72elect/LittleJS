@@ -34,19 +34,18 @@ const rows = {};           // settings rows by name, each with refresh()
 const settingsGroups = {}; // group content elements by name
 
 // play options, not part of the effect: the code passes them to the call
-const previewOptions = {scale:1, hue:0, saturation:1, flatten:false};
+const previewOptions = {scale: 1, hue: 0, saturation: 1, flatten: false};
 
 // the built-in effects, copies to edit
-const effectPresets = ()=> particleEffectsBuiltIn.map(name=>
+const effectPresets = () => particleEffectsBuiltIn.map(name =>
     structuredClone(particleEffectsGet(name)));
 
 ///////////////////////////////////////////////////////////////////////////////
 // page helpers
 
-const $ = (id)=> document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-function makeElement(tag, parent, className)
-{
+function makeElement(tag, parent, className) {
     const element = document.createElement(tag);
     className && (element.className = className);
     parent && parent.appendChild(element);
@@ -54,38 +53,35 @@ function makeElement(tag, parent, className)
 }
 
 // storage can be missing or throw, the page works without it
-function storageLoad(key)
-{
-    try { return localStorage.getItem(key) ?? undefined; }
-    catch { return undefined; }
+function storageLoad(key) {
+    try {
+        return localStorage.getItem(key) ?? undefined;
+    } catch {
+        return undefined;
+    }
 }
 
-function storageSave(key, value)
-{
-    try
-    {
+function storageSave(key, value) {
+    try {
         value === undefined ? localStorage.removeItem(key) :
             localStorage.setItem(key, value);
+    } catch {
     }
-    catch {}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // settings panel
 
-function buildSettingsPanel()
-{
+function buildSettingsPanel() {
     const panel = $('settingsPanel');
-    for (const group of particleEffectGroups)
-    {
+    for (const group of particleEffectGroups) {
         const details = makeElement('details', panel, 'group');
         details.open = true;
         makeElement('summary', details).textContent = group;
         settingsGroups[group] = makeElement('div', details);
     }
 
-    for (const setting of particleEffectSettings)
-    {
+    for (const setting of particleEffectSettings) {
         const parent = settingsGroups[setting.group];
         if (setting.kind === 'shape')
             rows[setting.name] = makeShapeRow(parent, setting);
@@ -99,8 +95,7 @@ function buildSettingsPanel()
 
     // gradient strips show each color range at a glance
     const colorGroup = settingsGroups.Color;
-    for (const pair of ['A', 'B'])
-    {
+    for (const pair of ['A', 'B']) {
         const label = makeElement('div', colorGroup, 'stripLabel');
         label.textContent = `${pair}: start to end`;
         const strip = makeElement('div', colorGroup, 'strip');
@@ -116,17 +111,16 @@ function buildSettingsPanel()
 // behaviors a game added that the designer does not know: kept in the
 // effect and saved, not previewed, each with a button to remove it
 let unknownShown;
-function refreshUnknownBehaviors()
-{
-    const unknown = effect.behaviors.filter(b=> !effectBehavior(b.name));
+
+function refreshUnknownBehaviors() {
+    const unknown = effect.behaviors.filter(b => !effectBehavior(b.name));
     const shown = JSON.stringify(unknown);
     if (shown === unknownShown)
         return; // only remade when they change, not on every slider tick
     unknownShown = shown;
     const box = $('unknownBehaviors');
     box.replaceChildren();
-    for (const b of unknown)
-    {
+    for (const b of unknown) {
         const row = makeElement('div', box, 'row');
         makeElement('label', row).textContent = b.name;
         const strength = makeElement('span', row);
@@ -135,9 +129,8 @@ function refreshUnknownBehaviors()
         const remove = makeElement('button', row, 'reset');
         remove.textContent = '✕';
         remove.title = 'Remove';
-        remove.onclick = ()=>
-        {
-            effect.behaviors = effect.behaviors.filter(x=> x.name !== b.name);
+        remove.onclick = () => {
+            effect.behaviors = effect.behaviors.filter(x => x.name !== b.name);
             refreshAll();
             effectChanged();
         };
@@ -148,15 +141,13 @@ function refreshUnknownBehaviors()
 
 // a row with a label, a hint under it and a reset button,
 // the controls go in between
-function makeRow(parent, name, description, onReset)
-{
+function makeRow(parent, name, description, onReset) {
     const row = makeElement('div', parent, 'row');
     row.dataset.name = name;
     const label = makeElement('label', row);
     label.textContent = name;
     label.title = description;
-    const finish = ()=>
-    {
+    const finish = () => {
         const reset = makeElement('button', row, 'reset');
         reset.textContent = '↺';
         reset.title = 'Reset to default';
@@ -166,10 +157,9 @@ function makeRow(parent, name, description, onReset)
     return {row, label, finish};
 }
 
-function makeNumberRow(parent, setting)
-{
+function makeNumberRow(parent, setting) {
     const {row, label, finish} = makeRow(parent, setting.name,
-        setting.description, ()=> setValue(setting.name, setting.value));
+        setting.description, () => setValue(setting.name, setting.value));
     const range = makeElement('input', row);
     range.type = 'range';
     range.min = setting.min;
@@ -181,15 +171,13 @@ function makeNumberRow(parent, setting)
     box.id = label.htmlFor = 'setting_' + setting.name;
     finish();
 
-    range.oninput = ()=> setValue(setting.name, parseFloat(range.value));
-    box.oninput = ()=>
-    {
+    range.oninput = () => setValue(setting.name, parseFloat(range.value));
+    box.oninput = () => {
         const value = parseFloat(box.value);
         isNumber(value) && setValue(setting.name, value);
     };
-    box.onchange = ()=> refresh(); // tidy what was typed
-    const refresh = ()=>
-    {
+    box.onchange = () => refresh(); // tidy what was typed
+    const refresh = () => {
         const value = effect.settings[setting.name];
         range.value = value;
         if (document.activeElement !== box)
@@ -198,23 +186,21 @@ function makeNumberRow(parent, setting)
     return {refresh};
 }
 
-function makeCheckboxRow(parent, setting)
-{
+function makeCheckboxRow(parent, setting) {
     const {row, label, finish} = makeRow(parent, setting.name,
-        setting.description, ()=> setValue(setting.name, setting.value));
+        setting.description, () => setValue(setting.name, setting.value));
     const checkbox = makeElement('input', row);
     checkbox.type = 'checkbox';
     checkbox.id = label.htmlFor = 'setting_' + setting.name;
     checkbox.style.gridColumn = 'span 2';
     finish();
-    checkbox.oninput = ()=> setValue(setting.name, checkbox.checked);
-    return {refresh: ()=> checkbox.checked = effect.settings[setting.name]};
+    checkbox.oninput = () => setValue(setting.name, checkbox.checked);
+    return {refresh: () => checkbox.checked = effect.settings[setting.name]};
 }
 
-function makeColorRow(parent, setting)
-{
+function makeColorRow(parent, setting) {
     const {row, finish} = makeRow(parent, setting.name, setting.description,
-        ()=> setValue(setting.name, setting.value.slice()));
+        () => setValue(setting.name, setting.value.slice()));
     row.classList.add('colorRow');
     const swatch = makeElement('div', row, 'swatch');
     const picker = makeElement('input', swatch);
@@ -233,21 +219,24 @@ function makeColorRow(parent, setting)
     alphaBox.title = 'Alpha';
     finish();
 
-    const update = ()=>
-    {
+    const update = () => {
         const c = new Color().setHex(picker.value);
         const a = clamp(parseFloat(alpha.value));
         setValue(setting.name, [c.r, c.g, c.b, a]);
     };
     picker.oninput = update;
-    alpha.oninput = ()=> { alphaBox.value = alpha.value; update(); };
-    alphaBox.oninput = ()=>
-    {
-        const a = parseFloat(alphaBox.value);
-        if (isNumber(a)) { alpha.value = clamp(a); update(); }
+    alpha.oninput = () => {
+        alphaBox.value = alpha.value;
+        update();
     };
-    const refresh = ()=>
-    {
+    alphaBox.oninput = () => {
+        const a = parseFloat(alphaBox.value);
+        if (isNumber(a)) {
+            alpha.value = clamp(a);
+            update();
+        }
+    };
+    const refresh = () => {
         const c = effect.settings[setting.name];
         picker.value = new Color(c[0], c[1], c[2]).toString(false);
         alpha.value = c[3];
@@ -258,22 +247,19 @@ function makeColorRow(parent, setting)
 }
 
 // the plugin's shapes as buttons, and Tile to use the texture instead
-function makeShapeRow(parent, setting)
-{
+function makeShapeRow(parent, setting) {
     const {row, finish} = makeRow(parent, setting.name, setting.description,
-        ()=> setValue(setting.name, setting.value));
+        () => setValue(setting.name, setting.value));
     row.classList.add('shapeRow');
     const buttons = makeElement('div', row, 'shapes');
-    const make = (name, title)=>
-    {
+    const make = (name, title) => {
         const button = makeElement('button', buttons);
         button.title = title;
         button.dataset.shape = name;
-        button.onclick = ()=> setValue('shape', name);
+        button.onclick = () => setValue('shape', name);
         return button;
     };
-    for (const name of particleEffectShapes)
-    {
+    for (const name of particleEffectShapes) {
         // each shape drawn from the plugin's own sheet
         const canvas = makeElement('canvas', make(name, name));
         canvas.width = canvas.height = 32;
@@ -283,8 +269,7 @@ function makeShapeRow(parent, setting)
     }
     make('', 'Use a tile from the texture').textContent = 'Tile';
     finish();
-    const refresh = ()=>
-    {
+    const refresh = () => {
         for (const button of buttons.children)
             button.classList.toggle('selected',
                 button.dataset.shape === effect.settings.shape);
@@ -292,10 +277,9 @@ function makeShapeRow(parent, setting)
     return {refresh};
 }
 
-function makeBehaviorRow(parent, behavior)
-{
+function makeBehaviorRow(parent, behavior) {
     const {row, label, finish} = makeRow(parent, behavior.name,
-        behavior.description, ()=> setBehavior(behavior.name, false));
+        behavior.description, () => setBehavior(behavior.name, false));
     const checkbox = makeElement('input');
     checkbox.type = 'checkbox';
     label.prepend(checkbox, ' ');
@@ -311,18 +295,16 @@ function makeBehaviorRow(parent, behavior)
     box.step = .01;
     finish();
 
-    const strength = ()=> parseFloat(range.value);
-    checkbox.oninput = ()=>
+    const strength = () => parseFloat(range.value);
+    checkbox.oninput = () =>
         setBehavior(behavior.name, checkbox.checked, strength());
-    range.oninput = ()=> setBehavior(behavior.name, true, strength());
-    box.oninput = ()=>
-    {
+    range.oninput = () => setBehavior(behavior.name, true, strength());
+    box.oninput = () => {
         const value = parseFloat(box.value);
         isNumber(value) && setBehavior(behavior.name, true, value);
     };
-    const refresh = ()=>
-    {
-        const found = effect.behaviors.find(b=> b.name === behavior.name);
+    const refresh = () => {
+        const found = effect.behaviors.find(b => b.name === behavior.name);
         const strength = found ? found.strength : behavior.value;
         checkbox.checked = !!found;
         range.value = strength;
@@ -336,11 +318,9 @@ function makeBehaviorRow(parent, behavior)
 // editing
 
 // change one setting of the effect being edited
-function setValue(name, value)
-{
-    const setting = particleEffectSettings.find(s=> s.name === name);
-    if (setting.kind === 'number')
-    {
+function setValue(name, value) {
+    const setting = particleEffectSettings.find(s => s.name === name);
+    if (setting.kind === 'number') {
         value = clamp(value, setting.hardMin, setting.hardMax);
         setting.step >= 1 && (value = round(value));
     }
@@ -357,33 +337,29 @@ function setValue(name, value)
 }
 
 // turn a behavior on or off, or set its strength
-function setBehavior(name, on, strength)
-{
+function setBehavior(name, on, strength) {
     const behavior = effectBehavior(name);
-    const others = effect.behaviors.filter(b=> b.name !== name);
-    if (on)
-    {
+    const others = effect.behaviors.filter(b => b.name !== name);
+    if (on) {
         const value = isNumber(strength) ? strength : behavior.value;
-        others.push({name, strength:clamp(value, behavior.min, behavior.max)});
+        others.push({name, strength: clamp(value, behavior.min, behavior.max)});
     }
 
     // kept in table order so the export reads the same every time
-    const order = (b)=>
-    {
+    const order = (b) => {
         const i = particleEffectBehaviors.indexOf(effectBehavior(b.name));
         return i < 0 ? 1e9 : i; // a game's own, after the ones known
     };
-    effect.behaviors = others.sort((a, b)=> order(a) - order(b));
+    effect.behaviors = others.sort((a, b) => order(a) - order(b));
     refreshAll();
     effectChanged();
 }
 
 // write the effect into every control
-function refreshAll()
-{
+function refreshAll() {
     for (const name in rows)
         rows[name].refresh();
-    const css = (c)=> new Color(...c).toString();
+    const css = (c) => new Color(...c).toString();
     const checker =
         'repeating-conic-gradient(#555 0 25%, #333 0 50%) 0 0 / 10px 10px';
     const s = effect.settings;
@@ -393,8 +369,7 @@ function refreshAll()
             checker;
 
     // dim settings that do nothing without another one on
-    for (const name in effectNeeds)
-    {
+    for (const name in effectNeeds) {
         const row = document.querySelector(`.row[data-name=${name}]`);
         row.style.opacity = effectNeeds[name](s) ? '' : .5;
     }
@@ -403,22 +378,19 @@ function refreshAll()
 }
 
 // after any edit: the live emitter, the floor, the code and storage
-function effectChanged()
-{
+function effectChanged() {
     applyPreview();
     updateFloor();
     updateCode();
     saveLibrary();
 }
 
-function updateCode()
-{
+function updateCode() {
     $('codeText').value = effectToCode(effect, previewOptions,
         $('expandCheckbox').checked, view3D);
 }
 
-function restartEmitter()
-{
+function restartEmitter() {
     emitter && emitter.destroy(true);
     emitter = view3D ?
         particleEffect3D(effect, vec3(), previewOptions) :
@@ -427,24 +399,20 @@ function restartEmitter()
 }
 
 // switch the preview between 2D and 3D, the effect plays again in it
-function setView3D(on)
-{
+function setView3D(on) {
     view3D = on;
     $('buttonView').textContent = on ? '2D' : '3D';
     $('flattenLabel').hidden = !on;
     $('expandCheckbox').disabled = on;
     $('expandCheckbox').parentElement.title =
         on ? 'The full constructor is for 2D' : '';
-    if (on)
-    {
+    if (on) {
         // an orbit camera and a flat ground 3 below, as the 2D floor
         camera3D = new CameraControl3D(vec3(), 10, .4);
         ground3D = new HeightMap([[0, 0], [0, 0]], vec2(40), 1, undefined,
             vec3(0, -3, 0));
         ground3D.color = hsl(0, 0, .3);
-    }
-    else
-    {
+    } else {
         camera3D.destroy();
         ground3D.destroy();
         camera3D = ground3D = undefined;
@@ -455,8 +423,7 @@ function setView3D(on)
 }
 
 // the effect on the running preview, recolored as the options say
-function applyPreview()
-{
+function applyPreview() {
     const {hue, saturation} = previewOptions;
     const apply = view3D ? particleEffectApply3D : particleEffectApply;
     apply(emitter, hue || saturation != 1 ?
@@ -464,46 +431,44 @@ function applyPreview()
 }
 
 // a floor to land on while particles collide with tiles, 3 below the emitter
-function updateFloor()
-{
+function updateFloor() {
     const collide = effect.settings.collideLevel && !view3D;
-    if (collide && !floorLayer)
-    {
+    if (collide && !floorLayer) {
         // a 1 pixel tile keeps the layer's canvas small
         const width = 200, tileInfo = tile(0, 1, defaultTextureInfo, 0);
-        floorLayer = new TileCollisionLayer(vec2(-width/2, -4),
+        floorLayer = new TileCollisionLayer(vec2(-width / 2, -4),
             vec2(width, 1), tileInfo);
         floorLayer.friction = 0; // so the effect's own friction decides
         for (let x = 0; x < width; ++x)
             floorLayer.setCollisionData(vec2(x, 0));
-    }
-    else if (!collide && floorLayer)
-    {
+    } else if (!collide && floorLayer) {
         floorLayer.destroy();
         floorLayer = undefined;
     }
 }
 
 // the starting zoom, less on a small preview so the floor still shows
-function fitCameraScale() { return min(64, $('previewArea').clientHeight / 9); }
+function fitCameraScale() {
+    return min(64, $('previewArea').clientHeight / 9);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // library and storage
 
-function saveLibrary()
-{
+function saveLibrary() {
     storageSave(storageKey, particleEffectsText(library));
     storageSave(storageSelectedKey, String(library.indexOf(effect)));
 }
 
-function loadLibrary()
-{
+function loadLibrary() {
     const text = storageLoad(storageKey);
-    if (text)
-    {
+    if (text) {
         // one that cannot be read is kept aside, not overwritten
-        try { library = particleEffectsParse(text); }
-        catch { storageSave(storageBackupKey, text); }
+        try {
+            library = particleEffectsParse(text);
+        } catch {
+            storageSave(storageBackupKey, text);
+        }
     }
     if (!library.length)
         library = effectPresets();
@@ -511,8 +476,7 @@ function loadLibrary()
     return selected >= 0 && selected < library.length ? selected : 0;
 }
 
-function selectEffect(index)
-{
+function selectEffect(index) {
     effect = library[index];
     refreshLibraryBar();
     refreshAll();
@@ -522,11 +486,9 @@ function selectEffect(index)
     saveLibrary();
 }
 
-function refreshLibraryBar()
-{
+function refreshLibraryBar() {
     const select = $('effectSelect');
-    select.replaceChildren(...library.map((e, i)=>
-    {
+    select.replaceChildren(...library.map((e, i) => {
         const option = document.createElement('option');
         option.value = i;
         option.textContent = e.name;
@@ -540,85 +502,75 @@ function refreshLibraryBar()
 ///////////////////////////////////////////////////////////////////////////////
 // preview and code panel controls
 
-function setupPreviewControls()
-{
+function setupPreviewControls() {
     const preview = $('previewArea');
-    preview.addEventListener('pointerdown', (e)=>
+    preview.addEventListener('pointerdown', (e) =>
         e.button === 0 && (dragging = true));
-    addEventListener('pointerup', ()=> dragging = false);
-    addEventListener('pointercancel', ()=> dragging = false);
-    preview.addEventListener('pointerenter', ()=> previewHover = true);
-    preview.addEventListener('pointerleave', ()=> previewHover = false);
+    addEventListener('pointerup', () => dragging = false);
+    addEventListener('pointercancel', () => dragging = false);
+    preview.addEventListener('pointerenter', () => previewHover = true);
+    preview.addEventListener('pointerleave', () => previewHover = false);
 
     // the canvas fills the preview area, not the window, never shrinking to 0
-    const fit = ()=> setCanvasMaxSize(vec2(max(preview.clientWidth, 1),
+    const fit = () => setCanvasMaxSize(vec2(max(preview.clientWidth, 1),
         max(preview.clientHeight, 1)));
     new ResizeObserver(fit).observe(preview);
     fit();
 
-    $('buttonRestart').onclick = ()=> restartEmitter();
-    $('buttonResetZoom').onclick = ()=> view3D ?
+    $('buttonRestart').onclick = () => restartEmitter();
+    $('buttonResetZoom').onclick = () => view3D ?
         camera3D.distance = 10 : setCameraScale(fitCameraScale());
-    $('buttonPause').onclick = ()=>
-    {
+    $('buttonPause').onclick = () => {
         setPaused(!paused);
         $('buttonPause').textContent = paused ? 'Play' : 'Pause';
     };
-    $('backgroundSelect').oninput = ()=>
+    $('backgroundSelect').oninput = () =>
         setCanvasClearColor(hsl(0, 0, parseFloat($('backgroundSelect').value)));
-    $('debugCheckbox').oninput = ()=>
+    $('debugCheckbox').oninput = () =>
         debugParticles = $('debugCheckbox').checked;
     $('pixelatedCheckbox').checked = tilesPixelated;
-    $('pixelatedCheckbox').oninput = ()=>
-    {
+    $('pixelatedCheckbox').oninput = () => {
         // a game sets this once, the textures here are made again to show it
         setTilesPixelated($('pixelatedCheckbox').checked);
         storageSave(storagePixelatedKey, String(tilesPixelated));
-        for (const texture of new Set([textureInfos[0], defaultTextureInfo]))
-        {
+        for (const texture of new Set([textureInfos[0], defaultTextureInfo])) {
             texture.destroyWebGLTexture();
             texture.createWebGLTexture();
         }
     };
 
     // play options: a scale or flatten remakes the emitter, colors apply live
-    const option = (id, name, read, restart)=> $(id).oninput = ()=>
-    {
+    const option = (id, name, read, restart) => $(id).oninput = () => {
         const value = read($(id));
         if (value === undefined) return;
         previewOptions[name] = value;
         restart ? restartEmitter() : applyPreview();
         updateCode();
     };
-    const positive = (e)=>
-    {
+    const positive = (e) => {
         const value = parseFloat(e.value);
         return isNumber(value) && value > 0 ? value : undefined;
     };
     option('scaleInput', 'scale', positive, true);
-    option('hueInput', 'hue', (e)=> parseFloat(e.value));
-    option('saturationInput', 'saturation', (e)=> parseFloat(e.value));
-    option('flattenCheckbox', 'flatten', (e)=> e.checked, true);
-    $('buttonView').onclick = ()=> setView3D(!view3D);
+    option('hueInput', 'hue', (e) => parseFloat(e.value));
+    option('saturationInput', 'saturation', (e) => parseFloat(e.value));
+    option('flattenCheckbox', 'flatten', (e) => e.checked, true);
+    $('buttonView').onclick = () => setView3D(!view3D);
 
     $('expandCheckbox').checked = storageLoad(storageExpandKey) === 'true';
-    $('expandCheckbox').oninput = ()=>
-    {
+    $('expandCheckbox').oninput = () => {
         storageSave(storageExpandKey, String($('expandCheckbox').checked));
         updateCode();
     };
-    $('buttonCopy').onclick = ()=>
-    {
-        const copied = ()=>
-        {
+    $('buttonCopy').onclick = () => {
+        const copied = () => {
             $('buttonCopy').textContent = 'Copied';
-            setTimeout(()=> $('buttonCopy').textContent = 'Copy', 1e3);
+            setTimeout(() => $('buttonCopy').textContent = 'Copy', 1e3);
         };
 
         // the clipboard api needs a secure page, selecting works anywhere
         // and leaves the code selected to copy by hand if that fails too
-        const select = ()=>
-        {
+        const select = () => {
             $('codeText').select();
             document.execCommand('copy') && copied();
         };
@@ -630,59 +582,51 @@ function setupPreviewControls()
 ///////////////////////////////////////////////////////////////////////////////
 // library bar
 
-function setupLibraryBar()
-{
-    $('effectName').onchange = ()=>
-    {
+function setupLibraryBar() {
+    $('effectName').onchange = () => {
         const name = $('effectName').value.trim().slice(0, 60);
-        if (name && name !== effect.name)
-        {
-            const others = library.filter(e=> e !== effect);
+        if (name && name !== effect.name) {
+            const others = library.filter(e => e !== effect);
             effect.name = effectUniqueName(others, name);
         }
         refreshLibraryBar();
         saveLibrary();
     };
-    $('buttonNew').onclick = ()=>
-        addEffect(particleEffectSanitize({name:'New Effect'}));
-    $('buttonDuplicate').onclick = ()=> addEffect(structuredClone(effect));
-    $('buttonDelete').onclick = ()=>
-    {
+    $('buttonNew').onclick = () =>
+        addEffect(particleEffectSanitize({name: 'New Effect'}));
+    $('buttonDuplicate').onclick = () => addEffect(structuredClone(effect));
+    $('buttonDelete').onclick = () => {
         if (!confirm(`Delete ${effect.name}?`))
             return;
         const index = library.indexOf(effect);
         library.splice(index, 1);
         library.length ||
-            library.push(particleEffectSanitize({name:'New Effect'}));
+        library.push(particleEffectSanitize({name: 'New Effect'}));
         selectEffect(min(index, library.length - 1));
     };
-    $('buttonClear').onclick = ()=>
-    {
+    $('buttonClear').onclick = () => {
         // Save Library first keeps them, Add Presets brings the built in back
         const count = library.length;
         if (!confirm(`Delete all ${count} effect${count == 1 ? '' : 's'}?`))
             return;
-        library = [particleEffectSanitize({name:'New Effect'})];
+        library = [particleEffectSanitize({name: 'New Effect'})];
         selectEffect(0);
     };
-    $('buttonPresets').onclick = ()=>
-    {
+    $('buttonPresets').onclick = () => {
         const first = library.length;
         for (const preset of effectPresets())
             addEffect(preset, false);
         selectEffect(first);
     };
-    $('buttonExport').onclick = ()=>
+    $('buttonExport').onclick = () =>
         download('particleEffects.json', particleEffectsText(library));
-    $('buttonExportEffect').onclick = ()=>
-    {
+    $('buttonExportEffect').onclick = () => {
         // a library file with one effect, Import adds it to any library
         const name = effect.name.replace(/[^\w -]/g, '').trim() || 'effect';
         download(name + '.json', particleEffectsText([effect]));
     };
-    $('buttonImport').onclick = ()=> $('importFile').click();
-    $('importFile').onchange = ()=>
-    {
+    $('buttonImport').onclick = () => $('importFile').click();
+    $('importFile').onchange = () => {
         const file = $('importFile').files[0];
         $('importFile').value = ''; // the same file can be picked again
         file && file.text().then(importLibrary);
@@ -690,30 +634,31 @@ function setupLibraryBar()
 }
 
 // save text to a file
-function download(fileName, text)
-{
-    const blob = new Blob([text], {type:'application/json'});
+function download(fileName, text) {
+    const blob = new Blob([text], {type: 'application/json'});
     const link = makeElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = fileName;
     link.click();
-    setTimeout(()=> URL.revokeObjectURL(link.href), 1e3);
+    setTimeout(() => URL.revokeObjectURL(link.href), 1e3);
 }
 
 // add an effect with a unique name, selecting it unless told not to
-function addEffect(newEffect, select=true)
-{
+function addEffect(newEffect, select = true) {
     newEffect.name = effectUniqueName(library, newEffect.name);
     library.push(newEffect);
     select ? selectEffect(library.length - 1) : saveLibrary();
 }
 
 // add every effect in a library file, a bad file changes nothing
-function importLibrary(text)
-{
+function importLibrary(text) {
     let effects;
-    try { effects = particleEffectsParse(text); }
-    catch (e) { alert('Could not import: ' + e.message); return; }
+    try {
+        effects = particleEffectsParse(text);
+    } catch (e) {
+        alert('Could not import: ' + e.message);
+        return;
+    }
     const first = library.length;
     for (const imported of effects)
         addEffect(imported, false);
@@ -725,8 +670,7 @@ function importLibrary(text)
 
 let defaultTextureInfo; // tiles.png, captured at startup
 
-function setupTexture()
-{
+function setupTexture() {
     defaultTextureInfo = textureInfos[0];
 
     // picker, buttons and warning go under the shapes, above the tile rows
@@ -738,14 +682,14 @@ function setupTexture()
     buttons.id = 'tileButtons';
     const buttonNone = makeElement('button', buttons);
     buttonNone.textContent = 'Untextured';
-    buttonNone.onclick = ()=> setValue('tileIndex', -1);
+    buttonNone.onclick = () => setValue('tileIndex', -1);
     const buttonLoad = makeElement('button', buttons);
     buttonLoad.textContent = 'Load Image';
-    buttonLoad.onclick = ()=> $('textureFile').click();
+    buttonLoad.onclick = () => $('textureFile').click();
     const buttonDefault = makeElement('button', buttons);
     buttonDefault.id = 'buttonDefaultTexture';
     buttonDefault.textContent = 'Default Texture';
-    buttonDefault.onclick = ()=> restoreDefaultTexture();
+    buttonDefault.onclick = () => restoreDefaultTexture();
     const warning = makeElement('div', undefined, 'warning');
     warning.id = 'tileWarning';
     warning.textContent =
@@ -757,29 +701,26 @@ function setupTexture()
     file.hidden = true;
     group.querySelector('.shapeRow').after(picker, buttons, warning, file);
 
-    picker.onclick = (e)=>
-    {
+    picker.onclick = (e) => {
         // the tile under the click, in texture pixels
         const s = effect.settings, texture = textureInfos[0].size;
         const rect = picker.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width * texture.x;
         const y = (e.clientY - rect.top) / rect.height * texture.y;
-        const cell = s.tileSize + s.tilePadding*2;
+        const cell = s.tileSize + s.tilePadding * 2;
         const columns = floor(texture.x / cell), rows = floor(texture.y / cell);
         const column = floor(x / cell), row = floor(y / cell);
         if (column < columns && row < rows)
             setValue('tileIndex', row * columns + column);
     };
-    file.onchange = ()=>
-    {
+    file.onchange = () => {
         file.files[0] && readTextureFile(file.files[0]);
         file.value = '';
     };
 
     // drop an image anywhere on the page
-    document.addEventListener('dragover', (e)=> e.preventDefault());
-    document.addEventListener('drop', (e)=>
-    {
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => {
         e.preventDefault();
         const dropped = e.dataTransfer.files[0];
         dropped && readTextureFile(dropped);
@@ -789,43 +730,40 @@ function setupTexture()
     saved && loadCustomTexture(saved);
 }
 
-function readTextureFile(file)
-{
+function readTextureFile(file) {
     if (!file.type.startsWith('image/'))
         return;
     const reader = new FileReader;
-    reader.onload = ()=>
-    {
+    reader.onload = () => {
         // too big for storage still works, it just is not kept
-        try { localStorage.setItem('particles_textureData', reader.result); }
-        catch { storageSave('particles_textureData'); }
+        try {
+            localStorage.setItem('particles_textureData', reader.result);
+        } catch {
+            storageSave('particles_textureData');
+        }
         loadCustomTexture(reader.result);
     };
     reader.readAsDataURL(file);
 }
 
-function loadCustomTexture(dataURL)
-{
+function loadCustomTexture(dataURL) {
     const image = new Image;
-    image.onload = ()=> setCustomTexture(image);
-    image.onerror = ()=> storageSave('particles_textureData'); // not kept
+    image.onload = () => setCustomTexture(image);
+    image.onerror = () => storageSave('particles_textureData'); // not kept
     image.src = dataURL;
 }
 
-function setCustomTexture(image)
-{
+function setCustomTexture(image) {
     // swap texture 0 so tile() and the exported code keep working
     swapTexture(new TextureInfo(image));
 }
 
-function restoreDefaultTexture()
-{
+function restoreDefaultTexture() {
     storageSave('particles_textureData');
     swapTexture(defaultTextureInfo);
 }
 
-function swapTexture(textureInfo)
-{
+function swapTexture(textureInfo) {
     // particles keep the tile they were made with, so they go first
     const old = textureInfos[0];
     textureInfos[0] = textureInfo;
@@ -838,8 +776,7 @@ function swapTexture(textureInfo)
 
 // draw the texture with its tile grid and the chosen tile,
 // and show the warning if the tile does not fit
-function refreshTexture()
-{
+function refreshTexture() {
     const picker = $('tilePicker');
     if (!picker || !defaultTextureInfo)
         return;
@@ -852,7 +789,7 @@ function refreshTexture()
 
     // redrawn only when what it shows changes, not on every slider tick
     const drawn = [texture, s.tileIndex, s.tileSize, s.tilePadding];
-    if (pickerDrawn && drawn.every((v, i)=> v === pickerDrawn[i]))
+    if (pickerDrawn && drawn.every((v, i) => v === pickerDrawn[i]))
         return;
     pickerDrawn = drawn;
     const image = texture.image, size = texture.size;
@@ -866,7 +803,7 @@ function refreshTexture()
     image && context.drawImage(image, 0, 0, picker.width, picker.height);
 
     // grid lines and the chosen tile
-    const cell = (s.tileSize + s.tilePadding*2) * scale;
+    const cell = (s.tileSize + s.tilePadding * 2) * scale;
     const columns = floor(size.x * scale / cell);
     const rows = floor(size.y * scale / cell);
     context.strokeStyle = 'hsla(0,0%,100%,.12)';
@@ -875,8 +812,7 @@ function refreshTexture()
         context.strokeRect(x * cell + .5, 0, 0, rows * cell);
     for (let y = 0; y <= rows; ++y)
         context.strokeRect(0, y * cell + .5, columns * cell, 0);
-    if (s.tileIndex >= 0 && s.tileIndex < columns * rows)
-    {
+    if (s.tileIndex >= 0 && s.tileIndex < columns * rows) {
         context.strokeStyle = 'hsl(200,80%,60%)';
         context.lineWidth = 2;
         const x = s.tileIndex % columns, y = floor(s.tileIndex / columns);
@@ -885,8 +821,7 @@ function refreshTexture()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameInit()
-{
+function gameInit() {
     new Render3DPlugin;
     setGravity(vec2(0, -.01));
     render3D.gravity = vec3(0, -.01, 0); // gravityScale pulls the same in 3D
@@ -896,17 +831,15 @@ function gameInit()
     setupLibraryBar();
     setupTexture();
     setupPreviewControls();
-    $('effectSelect').oninput = ()=>
+    $('effectSelect').oninput = () =>
         selectEffect(parseInt($('effectSelect').value));
     selectEffect(loadLibrary());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameUpdate()
-{
+function gameUpdate() {
     // a finished one shot effect plays again after a second
-    if (emitter.destroyed)
-    {
+    if (emitter.destroyed) {
         if (!restartTimer.isSet())
             restartTimer.set(1);
         else if (restartTimer.elapsed())
@@ -925,12 +858,10 @@ function gameUpdate()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameUpdatePost()
-{
+function gameUpdatePost() {
     // the 3D camera turns with a drag and zooms with the wheel, only when
     // they start in the preview; it updates itself unless paused
-    if (view3D)
-    {
+    if (view3D) {
         camera3D.dragSpeed = dragging ? .01 : 0;
         camera3D.zoomSpeed = previewHover ? .1 : 0;
         paused && camera3D.update();
@@ -938,7 +869,7 @@ function gameUpdatePost()
 
     // zoom works while paused too
     if (mouseWheel && previewHover && !view3D)
-        setCameraScale(clamp(cameraScale * (1 - sign(mouseWheel)/5), 10, 300));
+        setCameraScale(clamp(cameraScale * (1 - sign(mouseWheel) / 5), 10, 300));
 
     // debug key 3 toggles the bounds too
     if ($('debugCheckbox').checked !== debugParticles)
@@ -951,18 +882,17 @@ function gameUpdatePost()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameRender()
-{
+function gameRender() {
     // show the floor the particles land on
-    if (floorLayer)
-    {
+    if (floorLayer) {
         const size = floorLayer.size;
         drawRect(floorLayer.pos.add(size.scale(.5)), size, hsl(0, 0, .3));
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameRenderPost() {}
+function gameRenderPost() {
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // startup LittleJS engine, drawing into the preview area
