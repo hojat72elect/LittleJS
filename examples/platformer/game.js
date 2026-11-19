@@ -14,12 +14,19 @@ import * as GameObjects from './gameObjects.js';
 import * as GameEffects from './gameEffects.js';
 import * as GamePlayer from './gamePlayer.js';
 import * as GameLevel from './gameLevel.js';
+
 const {vec2} = LJS;
 
 // globals
 export let gameLevelData, spriteAtlas, player, camera, score, deaths;
-export function addToScore(delta=1) { score += delta; }
-export function addToDeaths() { ++deaths; }
+
+export function addToScore(delta = 1) {
+    score += delta;
+}
+
+export function addToDeaths() {
+    ++deaths;
+}
 
 // enable touch gamepad on touch devices
 LJS.setTouchGamepadEnable(true);
@@ -29,11 +36,10 @@ LJS.setCanvasMinAspect(.4);
 LJS.setCanvasMaxAspect(2.5);
 
 ///////////////////////////////////////////////////////////////////////////////
-function loadLevel()
-{
+function loadLevel() {
     // setup level
     GameLevel.buildLevel();
-    
+
     // spawn player
     player = new GamePlayer.Player(GameLevel.playerStartPos);
 
@@ -51,61 +57,61 @@ function loadLevel()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-async function gameInit()
-{
+async function gameInit() {
     // load the game level data
     gameLevelData = await LJS.fetchJSON('gameLevelData.json');
 
     // engine settings
-    LJS.setGravity(vec2(0,-.01));
+    LJS.setGravity(vec2(0, -.01));
     LJS.setObjectDefaultDamping(.99);
     LJS.setObjectDefaultAngleDamping(.99);
-    LJS.setCameraScale(4*16);
+    LJS.setCameraScale(4 * 16);
 
     // create a table of all sprites
-    const gameTile = (i, size=16)=> LJS.tile(i, size, 0, 1);
+    const gameTile = (i, size = 16) => LJS.tile(i, size, 0, 1);
     spriteAtlas =
-    {
-        // large tiles
-        circle:  gameTile(0),
-        crate:   gameTile(1),
-        player:  gameTile(2),
-        enemy:   gameTile(4),
-        coin:    gameTile(5),
+        {
+            // large tiles
+            circle: gameTile(0),
+            crate: gameTile(1),
+            player: gameTile(2),
+            enemy: gameTile(4),
+            coin: gameTile(5),
 
-        // small tiles
-        gun:     gameTile(vec2(0,2),8),
-        grenade: gameTile(vec2(1,2),8),
-    };
+            // small tiles
+            gun: gameTile(vec2(0, 2), 8),
+            grenade: gameTile(vec2(1, 2), 8),
+        };
 
     loadLevel();
 
     // the level editor's Restart button (Esc then 0) rebuilds the level with its changes, and its Play from mouse
     // puts the player where the mouse is
     LJS.levelEditor.onRestart = loadLevel;
-    LJS.levelEditor.onPlayFrom = (pos)=> { player.pos = pos.copy(); player.velocity = vec2(); };
+    LJS.levelEditor.onPlayFrom = (pos) => {
+        player.pos = pos.copy();
+        player.velocity = vec2();
+    };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameUpdate()
-{
+function gameUpdate() {
     // respawn player
-    if (player.deadTimer > 1)
-    {
+    if (player.deadTimer > 1) {
         player = new GamePlayer.Player(GameLevel.playerStartPos);
-        player.velocity = vec2(0,.1);
+        player.velocity = vec2(0, .1);
         GameEffects.sound_jump.play();
         camera.target = player;
     }
-    
+
     // mouse wheel = zoom, the camera keeps the player the same height above the middle of the view
-    LJS.setCameraScale(LJS.clamp(LJS.cameraScale*(1-LJS.mouseWheel/10), 1, 1e3));
+    LJS.setCameraScale(LJS.clamp(LJS.cameraScale * (1 - LJS.mouseWheel / 10), 1, 1e3));
     camera.offset = GameLevel.getCameraOffset();
-    
+
     // T = drop test crate
     if (LJS.keyWasPressed('KeyT'))
         new GameObjects.Crate(LJS.mousePos);
-    
+
     // E = drop enemy
     if (LJS.keyWasPressed('KeyE'))
         new GameObjects.Enemy(LJS.mousePos);
@@ -124,19 +130,17 @@ function gameUpdate()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameUpdatePost() {}
-
-///////////////////////////////////////////////////////////////////////////////
-function gameRender()
-{
+function gameUpdatePost() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function gameRenderPost()
-{
+function gameRender() {
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function gameRenderPost() {
     // draw to main canvas for hud rendering
-    const drawText = (text, x, y, size=40)=>
-    {
+    const drawText = (text, x, y, size = 40) => {
         const context = LJS.mainContext;
         context.textAlign = 'center';
         context.textBaseline = 'top';
@@ -146,8 +150,8 @@ function gameRenderPost()
         context.strokeText(text, x, y);
         context.fillText(text, x, y);
     }
-    drawText('Score: ' + score,   LJS.mainCanvasSize.x*1/4, 20);
-    drawText('Deaths: ' + deaths, LJS.mainCanvasSize.x*3/4, 20);
+    drawText('Score: ' + score, LJS.mainCanvasSize.x * 1 / 4, 20);
+    drawText('Deaths: ' + deaths, LJS.mainCanvasSize.x * 3 / 4, 20);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
